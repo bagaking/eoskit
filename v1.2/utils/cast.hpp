@@ -1,4 +1,4 @@
-
+#pragma once
 namespace kh {
     namespace utils {
         inline uint64_t bitshift(std::string const &value) {

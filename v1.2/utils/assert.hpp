@@ -12,6 +12,10 @@ namespace kh {
             eosio_assert(token.amount > 0, "must bet a positive amount");
         }
 
+        const void revert(std::string reason){
+            eosio_assert(false, reason.c_str());
+        }
+
         template<typename T>
         const void equal(const T &a, const T &b, std::string assertion) {
             eosio_assert(a == b, assertion.c_str());

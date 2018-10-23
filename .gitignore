@@ -1,3 +1,11 @@
+# Build
+*.wasm
+*.abi
+
+# Enviroment
+**/.DS_Store
+**/.vscode
+
 # Prerequisites
 *.d
 

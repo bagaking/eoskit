@@ -22,3 +22,53 @@ Blockchain development framework (for eos contract development)
     [check the official guide](https://developers.eos.io/eosio-home/docs#section-step-1-adding-eosiocode-to-permissions)  
 6. External call : the transfer are supported by defualt in kh::contract.  
     `_transfer_token(const account_name to, const account_name token_code, eosio::asset token, std::string memo)`  
+
+### API
+
+#### kh::contract
+```cpp
+/**
+ * send inline action
+ * @param act: c style string (*.c_str() for std::string)
+ * @param value: params packed by make_tuple
+*/
+_inline_action(const char *act, T &&value)
+
+/**
+ * send token
+ * @ref eosio/currency
+ */
+_transfer_token(const account_name to, const account_name token_code, eosio::asset token, std::string memo)
+```
+
+#### kh::utils
+
+##### cast
+
+convert std::string to uint64_t :  
+  `kh::utils::bitshift(std::string const &value)`  
+
+convert symbol to std::string :  
+  `kh::utils::symbol_to_string(eosio::asset val)`  
+
+convert asset to std::string :  
+  `kh::utils::asset_to_string(eosio::asset val)`  
+
+##### time
+
+`kh::utils::time::origin`  
+`kh::utils::time::day`  
+`kh::utils::time::hour`  
+`kh::utils::time::min`  
+`kh::utils::time::now()`  
+
+##### assert
+
+`kh::assert::code_must_be_eosio_token(account_name code)`  
+`kh::assert::is_valid_token_of_symbol(eosio::asset token, eosio::symbol_type symbol)`  
+`kh::assert::equal(const T &a, const T &b, std::string assertion)`  
+`kh::assert::not_equal(const T &a, const T &b, std::string assertion)`  
+
+#### kh::helper
+
+##### counter

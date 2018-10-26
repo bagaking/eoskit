@@ -46,6 +46,25 @@ namespace kh {
         }
 
 
+        /**
+         * convert uint64 to string
+         * @param val
+         * @return string
+         * @test
+         * - std::cout <<"|0:|" << int_to_string(0) << "|12:|" << int_to_string(12) <<"|18446744073709551615:|"<<int_to_string(18446744073709551615)<<"||";
+         * - |0:|0|12:|12|18446744073709551615:|18446744073709551615||
+         */
+        inline std::string uint64_to_string(uint64_t val){
+            int ind = 20; // max length of uint64 : 18446744073709551615
+            char buf[ind + 1];
+            buf[ind] = 0;
+            do{
+                buf[--ind] = '0' + (val % 10);
+                val /= 10;
+            } while(val);
+            return std::string(&buf[ind]);
+        }
+
 
     }
 }

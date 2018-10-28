@@ -1,60 +1,77 @@
 #pragma once
 
+#include "base.hpp"
+#include "table_type.hpp"
+
 namespace kh {
+
     namespace helper {
 
-        class counter {
+        /**
+         * counter to create
+         *
+         * @warning
+         * If you want to update this class, be careful to be compatible with old data.
+         * otherwise it may cause irreparable errors in other logic.
+         */
+        class counter : singleton<single_val_item_uint32_t, N(counters)> {
+
+        protected:
+            account_name _counter_name;
 
         public:
-
-            counter(account_name contract, account_name ctr_name) : _contract(contract), _ctr_name(ctr_name) {
-                ctr_table counters(_contract, _contract);
-                auto iterator = counters.find(_ctr_name);
-                if (iterator == counters.end()) {
-                    counters.emplace(_contract, [&](auto &row) {
-                        row.ctr_name = _ctr_name;
-                        row.count = 10;
+            counter(account_name code,
+                    account_name counter_name) :
+                    singleton(code, code),
+                    _counter_name(counter_name) {
+                auto itr = tb().find(_counter_name);
+                if (itr == tb().end()) {
+                    tb().emplace(_code, [&](auto &row) {
+                        row.key = _counter_name;
+                        row.val = 1;
                     });
                 }
             }
 
-            int get() {
-                ctr_table counters(_contract, _contract);
-                auto iterator = counters.find(_ctr_name);
-                return iterator->count;
+            /**
+             * get current value of the counter
+             * @return {uint32_t}
+             */
+            uint32_t get() {
+                auto itr = tb().find(_counter_name);
+                kh::assert::not_equal(itr, tb().end(), "counter not exist");
+                return itr->val;
             }
 
-            int inc(account_name caller) {
-                ctr_table counters(_contract, _contract);
-                auto iterator = counters.find(_ctr_name);
-                auto rc = 0;
-                counters.modify(iterator, caller, [&](auto &row) {
-                    row.count += 1;
-                    rc = row.count;
+            /**
+             * inc with a delta value
+             * @param {account_name} auth - can be inc by user's permission
+             * @param {int} delta - can only be a positive number, default is 1
+             * @return the new count after the inc operation
+             */
+            uint32_t inc(account_name auth, uint32_t delta = 1) {
+                auto itr = tb().find(_counter_name);
+                uint32_t new_count = 0;
+                tb().modify(itr, auth, [&](auto &row) {
+                    row.val += delta;
+                    new_count = row.val;
                 });
-                return rc;
+                return new_count;
             }
 
-        private :
-            account_name _contract;
-            account_name _ctr_name;
+            /**
+             * set a value directly
+             * @param val
+             *
+             * @warning
+             *      require **_code** authority.
+             *      it is recommended to use the **set** interface **only** when data is incorrect.
+             */
+            void set(uint32_t val) {
+                require_auth(_code);
+                auto itr = tb().find(_counter_name);
+            }
 
-
-            //@abi table maker i64
-            struct [[eosio::table]] ctr {
-                account_name ctr_name;
-                uint32_t count;
-
-                uint64_t primary_key() const {
-                    return ctr_name;
-                }
-
-                EOSLIB_SERIALIZE(ctr, (ctr_name)(count)
-                )
-            };
-
-            typedef eosio::multi_index<"counters"_n, ctr> ctr_table;
         };
-
     }
 }

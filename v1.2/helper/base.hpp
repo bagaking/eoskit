@@ -8,20 +8,25 @@ namespace kh {
         class singleton {
 
         public:
-            singleton(const account_name code,
-                      const account_name singleton_name)
+            singleton(const account_name &code,
+                      const account_name &singleton_key = 0)
                     : _code(code),
-                      _singleton_name(singleton_name),
-                      _table(code, singleton_name) {
+                      _singleton_key(singleton_key),
+                      _table(code, singleton_key) {
             }
 
             typedef eosio::multi_index <ExportName, ItemT> table_t;
 
-        protected:
+            table_t &tb(){
+                return _table;
+            }
 
-            table_t _table;
+        protected:
             account_name _code;
-            account_name _singleton_name;
+            account_name _singleton_key;
+
+        private:
+            table_t _table;
         };
 
     }

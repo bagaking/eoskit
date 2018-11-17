@@ -4,7 +4,7 @@ namespace kh {
     namespace assert {
 
         const void ok(bool value, std::string reason){
-            eosio_assert(query, reason.c_str());
+            eosio_assert(value, reason.c_str());
         }
 
         const void revert(std::string reason){

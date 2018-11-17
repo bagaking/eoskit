@@ -3,6 +3,9 @@
 #include "./utils/assert.hpp"
 #include "./helper/system_attr.hpp"
 
+#include "./plugin/plugin.hpp"
+#include "./plugin/context.hpp"
+
 namespace kh {
 
     class contract : public eosio::contract {
@@ -59,6 +62,7 @@ namespace kh {
     protected: /** fields */
         account_name _code;
         helper::system_attr* _p_sa;
+        kh::plugin<kh::ctx_transfer> trans_plugins;
 
     protected: /** region for utility */
 

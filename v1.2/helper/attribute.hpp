@@ -25,6 +25,19 @@ namespace kh {
                 return itr->val;
             }
 
+            std::string ensure(const uint64_t key, std::string default_val = "_"){
+                auto itr = tb().find(key);
+                if (itr == tb().end()) {
+                    tb().emplace(_code, [&](auto &row) {
+                        row.key = key;
+                        row.val = default_val;
+                    });
+                    return default_val;
+                } else{
+                    return itr->val;
+                }
+            }
+
             void set(account_name key, const std::string val) {
                 require_auth(_code);
 

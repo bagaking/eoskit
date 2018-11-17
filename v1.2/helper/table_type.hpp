@@ -42,6 +42,23 @@ namespace kh {
             EOSLIB_SERIALIZE(single_val_item_asset_t, (key)(val)
             )
         };
+
+        //@abi table maker i64
+        struct [[eosio::table]] field_all_in_one_t {
+            account_name key;
+
+            uint32_t vint;
+            std::string vstr;
+            account_name vaname;
+            eosio::asset vasset;
+
+            uint64_t primary_key() const {
+                return key;
+            }
+
+            EOSLIB_SERIALIZE(field_all_in_one_t, (key)(vint)(vstr)(vaname)(vasset)
+            )
+        };
     }
 }
 

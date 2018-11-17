@@ -1,18 +1,21 @@
 #pragma once
 
-#include "./helper/assert.hpp"
-#include "./helper/attribute.hpp"
+#include "./utils/assert.hpp"
+#include "./helper/system_attr.hpp"
 
 namespace kh {
 
     class contract : public eosio::contract {
-    public:
+
+    public: /** constructor */
         contract(
                 const account_name self,
                 const account_name code) //if code not equal to self, meas this call is triggered by other contracts.
                 : eosio::contract(self),
-                  _p_config(nullptr),
+                  _p_sa(nullptr),
                   _code(code) {};
+
+    public: /** region for public event */
 
         void transfer(
                 const account_name from,
@@ -48,15 +51,33 @@ namespace kh {
             }
         }
 
-        void setmy(account_name key, const std::string val) {
-            require_auth(_code);
-            if (_p_config == nullptr) {
-                _p_config = new helper::attribute(_self);
-            }
-            _p_config->set(key, val);
+    public: /** region for export */
+        [[eosio::action]] void setattr(account_name key, const std::string val) {
+            _set_my(key, val);
         }
 
-    protected:
+    protected: /** fields */
+        account_name _code;
+        helper::system_attr* _p_sa;
+
+    protected: /** region for utility */
+
+        template <typename T>
+        std::string _get_my(const uint64_t key, const T default_val) {
+            if (_p_sa == nullptr) {
+                _p_sa = new helper::system_attr(_self);
+            }
+            return _p_sa->ensure(key, default_val);
+        }
+
+        template <typename T>
+        void _set_my(account_name key, const T val) {
+            require_auth(_code);
+            if (_p_sa == nullptr) {
+                _p_sa = new helper::system_attr(_self);
+            }
+            _p_sa->set(key, val);
+        }
 
         template<typename T>
         void _inline_action(const char *act, T &&value) {
@@ -77,6 +98,8 @@ namespace kh {
                     .send();
         }
 
+    protected: /** region for event handlers */
+
         virtual void on_transfer(const account_name from,
                                  const account_name to,
                                  eosio::asset token,
@@ -88,15 +111,6 @@ namespace kh {
                                  std::string func,
                                  std::vector <std::string> args) = 0;
 
-    protected:
-        account_name _code;
-        helper::attribute* _p_config;
-        std::string my(const uint64_t key, std::string default_val = "_") {
-            if (_p_config == nullptr) {
-                _p_config = new helper::attribute(_self);
-            }
-            return _p_config->ensure(key, default_val);
-        }
     };
 } // namespace kh
 

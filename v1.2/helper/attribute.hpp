@@ -11,7 +11,7 @@ namespace kh {
 
         public:
             attribute(account_name code) :
-                    singleton(code) {
+                    singleton(code, code) {
             }
 
             bool exist(const uint64_t key) {

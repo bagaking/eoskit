@@ -2,28 +2,34 @@
 namespace kh {
 
     namespace assert {
-        const void code_must_be_eosio_token(account_name code) {
-            eosio_assert(N(eosio.token) == code, "invalid token publisher");
-        }
 
-        const void is_valid_token_of_symbol(eosio::asset token, eosio::symbol_type symbol) {
-            eosio_assert(token.is_valid(), "Invalid token transfer");
-            eosio_assert(token.symbol == symbol, "Only core token allowed");
-            eosio_assert(token.amount > 0, "must bet a positive amount");
+        const void ok(bool value, std::string reason){
+            eosio_assert(query, reason.c_str());
         }
 
         const void revert(std::string reason){
-            eosio_assert(false, reason.c_str());
+            ok(false, reason);
         }
 
         template<typename T>
         const void equal(const T &a, const T &b, std::string assertion) {
-            eosio_assert(a == b, assertion.c_str());
+            ok(a == b, assertion);
         }
 
         template<typename T>
         const void not_equal(const T &a, const T &b, std::string assertion) {
-            eosio_assert(a != b, assertion.c_str());
+            ok(a != b, assertion);
+        }
+
+
+        const void code_must_be_eosio_token(account_name code) {
+            equal(N(eosio.token), code, "invalid token publisher");
+        }
+
+        const void is_valid_token_of_symbol(eosio::asset token, eosio::symbol_type symbol) {
+            ok(token.is_valid(), "Invalid token transfer");
+            ok(token.amount > 0, "must bet a positive amount");
+            equal(token.symbol, symbol, "Only core token allowed");
         }
     }
 }

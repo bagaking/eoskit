@@ -6,11 +6,11 @@
 
 namespace kh {
 
-    class plg_trans_code_only_be_eosio : plugin<ctx_transcal> {
+    class plg_transcal_whitelist : plugin<ctx_transcal> {
     public:
-        override void on_trigger(const ctx_transcal &ctx) {
+        override void on_trigger(const ctx_transcal &ctx, const contract &contract) {
             kh::assert::equal(ctx.func, "deposit", "plg_trans_code_only_be_eosio : only deposit are accepted.")
-            next();
+            next(ctx, contract);
         };
 
     };

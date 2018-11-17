@@ -5,6 +5,8 @@
 
 #include "./plugin/plugin.hpp"
 #include "./plugin/context.hpp"
+#include "./plugin/plg_transfer.hpp"
+
 
 namespace kh {
 
@@ -16,44 +18,46 @@ namespace kh {
                 const account_name code) //if code not equal to self, meas this call is triggered by other contracts.
                 : eosio::contract(self),
                   _p_sa(nullptr),
-                  _code(code) {};
+                  _code(code) {
+        };
 
     public: /** region for public event */
 
-        void transfer(
+        void on_transfer(
                 const account_name from,
                 const account_name to,
                 eosio::asset quantity,
                 std::string memo
         ) {
-            auto call_type = memo[0];
-            auto correct_call_type = (call_type == '@' || call_type == '#');
-            if (memo.length() > 4 && correct_call_type && memo[1] == '[' && memo[2] != ']') { //min str : @[a]
-                auto pos_col = memo.find(':');
-                auto pos_end = memo.find(']');
-                std::string func;
-                std::vector <std::string> args;
-                if (pos_col != std::string::npos) {
-                    func = memo.substr(2, pos_col - 2);
-                    auto pos = pos_col + 1;
-                    auto pos_prev = pos;
-                    while (true) {
-                        if (pos = memo.find(',', pos), pos >= pos_end || pos == std::string::npos) {
-                            args.push_back(memo.substr(pos_prev, pos_end - pos_prev));
-                            break;
-                        }
-                        args.push_back(memo.substr(pos_prev, pos - pos_prev));
-                        pos_prev = ++pos;
-                    }
-                } else {
-                    func = memo.substr(2, pos_end - 2);
-                }
-                on_transcal(from, to, quantity, func, args);
-            } else {
-                on_transfer(from, to, quantity, memo);
+            if(transfer_plugins != nullptr) {
+                return;
             }
-        }
+            auto ctx = ctx_transfer();
+            ctx.from = from;
+            ctx.to = to;
+            ctx.quantity = quantity;
+            ctx.memo = memo;
 
+            transfer_plugins->trigger(ctx, *this);
+        }
+    protected: /** region for private event */
+
+        virtual void on_transcal(const account_name from,
+                                 const account_name to,
+                                 eosio::asset quantity,
+                                 std::string func,
+                                 std::vector<std::string>& args) {
+            if(transcal_plugins != nullptr) {
+                return;
+            }
+            auto ctx = ctx_transcal();
+            ctx.from = from;
+            ctx.to = to;
+            ctx.quantity = quantity;
+            ctx.func = func;
+            ctx.args = args;
+            transcal_plugins->trigger(ctx, *this);
+        }
     public: /** region for export */
         [[eosio::action]] void setattr(account_name key, const std::string val) {
             _set_my(key, val);
@@ -62,7 +66,8 @@ namespace kh {
     protected: /** fields */
         account_name _code;
         helper::system_attr* _p_sa;
-        kh::plugin<kh::ctx_transfer> trans_plugins;
+        kh::plugin<kh::ctx_transfer>* transfer_plugins;
+        kh::plugin<kh::ctx_transcal>* transcal_plugins;
 
     protected: /** region for utility */
 
@@ -102,18 +107,7 @@ namespace kh {
                     .send();
         }
 
-    protected: /** region for event handlers */
 
-        virtual void on_transfer(const account_name from,
-                                 const account_name to,
-                                 eosio::asset token,
-                                 std::string memo) = 0;
-
-        virtual void on_transcal(const account_name from,
-                                 const account_name to,
-                                 eosio::asset token,
-                                 std::string func,
-                                 std::vector <std::string> args) = 0;
 
     };
 } // namespace kh
@@ -145,7 +139,7 @@ bool transfer_act(uint64_t action) {
         switch (action) \
         { \
         case N(transfer): \
-          execute_action(&thiscontract, &TYPE::transfer); \
+          execute_action(&thiscontract, &TYPE::on_transfer); \
           break; \
           EOSIO_API(TYPE, MEMBERS) \
         } \

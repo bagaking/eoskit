@@ -3,6 +3,8 @@
 #include "base.hpp"
 #include "table_type.hpp"
 
+#include "../utils/assert.hpp"
+
 namespace kh {
 
     namespace helper {

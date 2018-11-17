@@ -1,13 +1,17 @@
 #pragma once
 
+#include "./helper/assert.hpp"
+#include "./helper/attribute.hpp"
+
 namespace kh {
 
     class contract : public eosio::contract {
     public:
         contract(
                 const account_name self,
-                const account_name code)
+                const account_name code) //if code not equal to self, meas this call is triggered by other contracts.
                 : eosio::contract(self),
+                  _p_config(nullptr),
                   _code(code) {};
 
         void transfer(
@@ -16,7 +20,9 @@ namespace kh {
                 eosio::asset quantity,
                 std::string memo
         ) {
-            if (memo.length() > 4 && memo[0] == '@' && memo[1] == '[' && memo[2] != ']') { //min str : @[a]
+            auto call_type = memo[0];
+            auto correct_call_type = (call_type == '@' || call_type == '#');
+            if (memo.length() > 4 && correct_call_type && memo[1] == '[' && memo[2] != ']') { //min str : @[a]
                 auto pos_col = memo.find(':');
                 auto pos_end = memo.find(']');
                 std::string func;
@@ -42,8 +48,15 @@ namespace kh {
             }
         }
 
+        void setmy(account_name key, const std::string val) {
+            require_auth(_code);
+            if (_p_config == nullptr) {
+                _p_config = new helper::attribute(_self);
+            }
+            _p_config->set(key, val);
+        }
+
     protected:
-        account_name _code;
 
         template<typename T>
         void _inline_action(const char *act, T &&value) {
@@ -74,6 +87,16 @@ namespace kh {
                                  eosio::asset token,
                                  std::string func,
                                  std::vector <std::string> args) = 0;
+
+    protected:
+        account_name _code;
+        helper::attribute* _p_config;
+        std::string my(const uint64_t key, std::string default_val = "_") {
+            if (_p_config == nullptr) {
+                _p_config = new helper::attribute(_self);
+            }
+            return _p_config->ensure(key, default_val);
+        }
     };
 } // namespace kh
 

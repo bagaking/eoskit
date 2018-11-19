@@ -8,6 +8,7 @@ namespace kh {
     public:
 
         void on_trigger(const ctx_transfer &ctx, kh::contract &contract_) override {
+            eosio::print("plg_transfer_validate_eos_token");
             kh::assert::code_must_be_eosio_token(contract_._get_code());
             kh::assert::is_valid_token_of_symbol(ctx.quantity, S(4, EOS));
             /** go ahead */
@@ -20,6 +21,7 @@ namespace kh {
     public:
 
         void on_trigger(const ctx_transfer &ctx, kh::contract &contract_) override {
+            eosio::print("plg_transfer_send_transcal");
             auto code = contract_._get_code();
             auto from = ctx.from;
             auto to = ctx.to;

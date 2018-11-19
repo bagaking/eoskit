@@ -18,6 +18,7 @@ namespace kh {
     public:
         template<typename plg_t>
         plugin<context_t, contract_t> *create() {
+            eosio::print("plugin.create");
             kh::assert::ok(nullptr == _next, "next plugin is already exist");
             _next = new plg_t();
             kh::assert::ok(nullptr != dynamic_cast<plugin<context_t, contract_t> *>(_next),
@@ -26,6 +27,7 @@ namespace kh {
         }
 
         void next(const context_t &ctx, contract_t &contract_) {
+            eosio::print("plugin.next");
             _wait_next = false;
             if (_next) {
                 _next->trigger(ctx, contract_);
@@ -33,6 +35,7 @@ namespace kh {
         }
 
         void trigger(const context_t &ctx, contract_t &contract_) {
+            eosio::print("plugin.trigger");
             _wait_next = true;
             on_trigger(ctx, contract_);
             kh::assert::ok(!_wait_next, "must call next on trigger method");
@@ -40,6 +43,7 @@ namespace kh {
 
         virtual void on_trigger(const context_t &ctx, contract_t &contract_) {
             // do nothing
+            next(ctx, contract_);
         };
 
     public:

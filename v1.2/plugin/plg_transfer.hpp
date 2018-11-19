@@ -6,17 +6,23 @@
 
 namespace kh {
 
-    class plg_trans_code_only_be_eosio : plugin<ctx_transfer> {
+    class plg_trans_validate_eos_token : plugin<ctx_transfer, kh::contract> {
     public:
-        override void on_trigger(const ctx_transfer &ctx, const contract &contract) {
-            kh::assert::equal(contract.code, N(eosio.token), "plg_trans_code_only_be_eosio : validate failed.")
+
+        void on_trigger(const ctx_transfer &ctx, const kh::contract &cont) override {
+            kh::assert::code_must_be_eosio_token(cont._get_code());
+            kh::assert::is_valid_token_of_symbol(ctx.quantity, S(4, EOS));
+            /** go ahead */
             next(ctx, contract);
-        };
+        }
+
+        override;
     };
 
-    class plg_transfer_send_transcal : plugin<ctx_transfer> {
+    class plg_transfer_send_transcal : plugin<ctx_transfer, kh::contract> {
     public:
-        override void on_trigger(const ctx_transfer &ctx, const contract &contract) {
+
+        void on_trigger(const ctx_transfer &ctx, const kh::contract &contract) override {
             auto code = contract.code;
             auto from = ctx.from;
             auto to = ctx.to;
@@ -48,6 +54,7 @@ namespace kh {
                 contract.on_transcal(from, to, quantity, func, args);
             }
 
+            /** go ahead */
             next(ctx, contract);
         };
 

@@ -3,11 +3,11 @@ namespace kh {
 
     namespace assert {
 
-        const void ok(bool value, std::string reason){
+        const void ok(bool value, std::string reason) {
             eosio_assert(value, reason.c_str());
         }
 
-        const void revert(std::string reason){
+        const void revert(std::string reason) {
             ok(false, reason);
         }
 
@@ -21,7 +21,6 @@ namespace kh {
             ok(a != b, assertion);
         }
 
-
         const void code_must_be_eosio_token(account_name code) {
             equal(N(eosio.token), code, "invalid token publisher");
         }
@@ -30,6 +29,18 @@ namespace kh {
             ok(token.is_valid(), "Invalid token transfer");
             ok(token.amount > 0, "must bet a positive amount");
             equal(token.symbol, symbol, "Only core token allowed");
+        }
+
+        const void is_system_account(account_name name) {
+            ok(name == N(eosio.bpay) ||
+               name == N(eosio.msig) ||
+               name == N(eosio.names) ||
+               name == N(eosio.ram) ||
+               name == N(eosio.ramfee) ||
+               name == N(eosio.saving) ||
+               name == N(eosio.stake) ||
+               name == N(eosio.token) ||
+               name == N(eosio.vpay), "must be system account");
         }
     }
 }

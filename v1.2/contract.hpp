@@ -9,6 +9,9 @@
 namespace kh {
 
     class contract : public eosio::contract {
+    public:
+        typedef plugin<kh::ctx_transfer, kh::contract> plg_transfer_t;
+        typedef plugin<kh::ctx_transcal, kh::contract> plg_transcal_t;
 
     public: /** constructor */
         contract(
@@ -22,22 +25,35 @@ namespace kh {
         /** region for public event */
         //    public:
         void on_transfer(
-                const account_name &from,
-                const account_name &to,
-                const eosio::asset &quantity,
-                const std::string &memo
-        );
+                account_name &from,
+                account_name &to,
+                eosio::asset &quantity,
+                std::string &memo
+        ) {
+            if (transfer_plugins == nullptr) { return; }
+            ctx_transfer ctx = {.from = from, .to = to, .quantity = quantity, .memo = memo};
+            transfer_plugins->trigger(ctx, *this);
+        }
 
         /** region for private event */
         //    protected:
-        void on_transcal(const account_name &from,
-                         const account_name &to,
-                         const eosio::asset &quantity,
-                         const std::string &func,
-                         const std::vector <std::string> &args);
+        void on_transcal(account_name &from,
+                         account_name &to,
+                         eosio::asset &quantity,
+                         std::string &func,
+                         std::vector <std::string> &args) {
+            if (transcal_plugins == nullptr) {
+                return;
+            }
+            ctx_transcal ctx = {.from = from, .to = to, .quantity = quantity, .func = func, .args = args};
+            transcal_plugins->trigger(ctx, *this);
+        }
+
         /** region for export */
         //    public:
-        [[eosio::action]] void setattr(account_name key, const std::string val);
+        [[eosio::action]] void setattr(account_name key, const std::string val) {
+            _set_my(key, val);
+        }
 
         /** region for utility */
         //    protected:
@@ -47,16 +63,44 @@ namespace kh {
         }
 
         template<typename T>
-        void _set_my(account_name key, const T val);
+        void _set_my(account_name key, const T val) {
+            require_auth(_code);
+            if (_p_sa == nullptr) {
+                _p_sa = new helper::system_attr(_self);
+            }
+            _p_sa->set(key, val);
+        }
 
         template<typename T>
-        std::string _get_my(const uint64_t key, const T default_val);
+        std::string _get_my(const uint64_t key, const T default_val) {
+            if (_p_sa == nullptr) {
+                _p_sa = new helper::system_attr(_self);
+            }
+            return _p_sa->ensure(key, default_val);
+        }
 
         template<typename T>
-        void _inline_action(const char *act, T &&value);
+        void _inline_action(const char *act, const T &&value) {
+            eosio::action(
+                    eosio::permission_level{get_self(), N(active)},
+                    get_self(),
+                    eosio::string_to_name(act),
+                    value)
+                    .send();
+        }
 
-        void
-        _transfer_token(const account_name to, const account_name token_code, eosio::asset token, std::string memo);
+        void _transfer_token(
+                const account_name &to,
+                const account_name &token_code,
+                const eosio::asset &token,
+                const std::string &memo) {
+            eosio::action(
+                    eosio::permission_level{get_self(), N(active)},
+                    token_code,
+                    N(transfer),
+                    make_tuple(get_self(), to, token, memo))
+                    .send();
+        }
 
     protected: /** fields */
         account_name _code;

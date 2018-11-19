@@ -1,29 +1,26 @@
 #pragma once
 
-#include "../utils/assert.hpp"
 #include "./plugin.hpp"
-#include "./context.hpp"
 
 namespace kh {
 
-    class plg_trans_validate_eos_token : plugin<ctx_transfer, kh::contract> {
+    class plg_transfer_validate_eos_token : public plugin<kh::ctx_transfer, kh::contract> {
     public:
 
-        void on_trigger(const ctx_transfer &ctx, const kh::contract &cont) override {
-            kh::assert::code_must_be_eosio_token(cont._get_code());
+        void on_trigger(const ctx_transfer &ctx, kh::contract &contract_) override {
+            kh::assert::code_must_be_eosio_token(contract_._get_code());
             kh::assert::is_valid_token_of_symbol(ctx.quantity, S(4, EOS));
             /** go ahead */
-            next(ctx, contract);
+            next(ctx, contract_);
         }
 
-        override;
     };
 
-    class plg_transfer_send_transcal : plugin<ctx_transfer, kh::contract> {
+    class plg_transfer_send_transcal : public plugin<kh::ctx_transfer, kh::contract> {
     public:
 
-        void on_trigger(const ctx_transfer &ctx, const kh::contract &contract) override {
-            auto code = contract.code;
+        void on_trigger(const ctx_transfer &ctx, kh::contract &contract_) override {
+            auto code = contract_._get_code();
             auto from = ctx.from;
             auto to = ctx.to;
             auto quantity = ctx.quantity;
@@ -51,11 +48,11 @@ namespace kh {
                 } else {
                     func = memo.substr(2, pos_end - 2);
                 }
-                contract.on_transcal(from, to, quantity, func, args);
+                contract_.on_transcal(from, to, quantity, func, args);
             }
 
             /** go ahead */
-            next(ctx, contract);
+            next(ctx, contract_);
         };
 
     };

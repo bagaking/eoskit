@@ -2,6 +2,7 @@
 
 #include "../utils/assert.hpp"
 #include "../contract.hpp"
+#include "./context.hpp"
 
 namespace kh {
 
@@ -9,39 +10,46 @@ namespace kh {
     class plugin {
 
     public:
-
-    private:
-        plugin<context_t, contract_t>() { }
-
-        plugin<context_t, contract_t> *_next = nullptr;
-        bool _wait_next = false;
-
-    public:
-
-        template<typename T>
-        plugin<context_t, contract_t> *create() {
-            kh::assert::equal(_next, nullptr, "next plugin is already exist");
-            _next = new T();
-            kh::assert::not_equal(nullptr, dynamic_cast<plugin<context_t, contract_t>>(*_next),
-                                  "type cast error"); //todo : need protection here
-            return next;
+        static plugin<context_t, contract_t> *create(plugin<context_t, contract_t> *&pointer) {
+            pointer = new plugin<context_t, contract_t>();
+            return pointer;
         }
 
-        void next(const context_t &ctx, const contract_t &cont) {
+    public:
+        template<typename plg_t>
+        plugin<context_t, contract_t> *create() {
+            kh::assert::ok(nullptr == _next, "next plugin is already exist");
+            _next = new plg_t();
+            kh::assert::ok(nullptr != dynamic_cast<plugin<context_t, contract_t> *>(_next),
+                           "type cast error"); //todo : need protection here
+            return _next;
+        }
+
+        void next(const context_t &ctx, contract_t &contract_) {
             _wait_next = false;
             if (_next) {
-                _next->trigger(ctx, cont);
+                _next->trigger(ctx, contract_);
             }
         }
 
-        void trigger(const context_t &ctx, const contract_t &cont) {
+        void trigger(const context_t &ctx, contract_t &contract_) {
             _wait_next = true;
-            on_trigger(ctx, cont);
+            on_trigger(ctx, contract_);
             kh::assert::ok(!_wait_next, "must call next on trigger method");
         }
 
-        virtual void on_trigger(const context_t &ctx, const contract_t &cont) = 0;
+        virtual void on_trigger(const context_t &ctx, contract_t &contract_) {
+            // do nothing
+        };
+
+    public:
+        plugin<context_t, contract_t>() {}
+
+    private:
+        plugin<context_t, contract_t> *_next = nullptr;
+        bool _wait_next = false;
 
     };
+
 
 }

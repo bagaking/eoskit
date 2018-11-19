@@ -18,5 +18,4 @@ namespace kh {
         std::string &func;
         std::vector<std::string> &args;
     };
-
 }

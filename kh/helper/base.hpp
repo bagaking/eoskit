@@ -9,7 +9,7 @@ namespace kh {
 
         public:
             singleton(const account_name &code,
-                      const account_name &singleton_key = 0)
+                      const account_name &singleton_key)
                     : _code(code),
                       _singleton_key(singleton_key),
                       _table(code, singleton_key) {

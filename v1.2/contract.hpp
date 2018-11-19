@@ -22,19 +22,19 @@ namespace kh {
         /** region for public event */
         //    public:
         void on_transfer(
-                const account_name from,
-                const account_name to,
-                eosio::asset quantity,
-                std::string memo
+                const account_name &from,
+                const account_name &to,
+                const eosio::asset &quantity,
+                const std::string &memo
         );
 
         /** region for private event */
         //    protected:
-        void on_transcal(const account_name from,
-                         const account_name to,
-                         eosio::asset quantity,
-                         std::string func,
-                         std::vector <std::string> &args);
+        void on_transcal(const account_name &from,
+                         const account_name &to,
+                         const eosio::asset &quantity,
+                         const std::string &func,
+                         const std::vector <std::string> &args);
         /** region for export */
         //    public:
         [[eosio::action]] void setattr(account_name key, const std::string val);

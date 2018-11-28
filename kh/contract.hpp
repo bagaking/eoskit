@@ -52,6 +52,7 @@ namespace kh {
         /** region for export */
         //    public:
         [[eosio::action]] void setattr(account_name key, const std::string val) {
+//            eosio::print("setattr", key, ",", val, " ||| ");
             _set_my(key, val);
         }
 
@@ -111,38 +112,28 @@ namespace kh {
     };
 } // namespace kh
 
-bool transfer_act(uint64_t action) {
-    return action == N(transfer);
-}
 
 #define EXPORT_ABI(TYPE, MEMBERS) \
-  extern "C" {  \
-     \
-     \
-    void apply(uint64_t receiver, uint64_t code, uint64_t action) \
-    { \
-      eosio_assert(boost::is_base_of<kh::contract, TYPE>::value, "contract must extend the kh::contract"); \
-      \
-      if (action == N(onerror)) \
-      { \
-        eosio_assert(code == N(eosio), \
-                     "onerror action's are only valid from the \"eosio\" system account"); \
-      } \
-      auto self = receiver; \
-        \
-      bool valid_internal_actions = code == self && !transfer_act(action); \
-      bool valid_external_transfer = transfer_act(action) && code == N(eosio.token); \
-      if (valid_internal_actions || valid_external_transfer || action == N(onerror)) \
-      { \
+extern "C" {  \
+    void apply(uint64_t receiver, uint64_t code, uint64_t action) { \
+        eosio_assert(boost::is_base_of<kh::contract, TYPE>::value, "contract must extend the kh::contract"); \
+        eosio_assert(action != N(onerror) || code == N(eosio), "onerror action's are only valid from the 'eosio' system account"); \
+        auto self = receiver; \
         TYPE thiscontract(self, code); \
-        switch (action) \
-        { \
-        case N(transfer): \
-          execute_action(&thiscontract, &TYPE::on_transfer); \
-          break; \
-          EOSIO_API(TYPE, MEMBERS) \
+        eosio::print("export :", self, ",", code, " ||| ");\
+        eosio::print("try call action :", action, " ||| ");\
+        switch (action) { \
+            case N(transfer): \
+                if(code == self) break; /* cannot receive transfer triggered by self */ \
+                /* to verify that code is eosio.token, using plugin plg_transfer_validate_eos_token in the contract */ \
+                execute_action(&thiscontract, &TYPE::on_transfer); \
+                break; \
+            EOSIO_API(TYPE, MEMBERS) \
+            default: \
+                eosio::print("call action error", action);\
+                break;\
         } \
-        /* does not allow destructor of thiscontract to run: eosio_exit(0); */ \
-      } \
     } \
-  }
+}
+
+#define KH_EXPORT(TYPE, MEMBERS) EXPORT_ABI(TYPE, MEMBERS(setattr))

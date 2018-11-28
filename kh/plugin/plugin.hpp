@@ -18,7 +18,7 @@ namespace kh {
     public:
         template<typename plg_t>
         plugin<context_t, contract_t> *create() {
-            eosio::print("plugin.create");
+//          eosio::print("plugin.create");
             kh::assert::ok(nullptr == _next, "next plugin is already exist");
             _next = new plg_t();
             kh::assert::ok(nullptr != dynamic_cast<plugin<context_t, contract_t> *>(_next),

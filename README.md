@@ -72,3 +72,23 @@ convert asset to std::string :
 #### kh::helper
 
 ##### counter
+
+### deploy
+
+there some entry should be insert to .abi file manually
+
+```json
+...
+tables[
+  ...
+  {
+      "name": "attributes",
+      "type": "field_all_in_one_t",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+  },
+  ...
+]
+...
+```

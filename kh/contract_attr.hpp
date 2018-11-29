@@ -40,4 +40,4 @@ namespace kh {
 
 }
 
-#define KH_EXPORT_ATTR() (setattr)
+#define KH_EXPORT_ATTR (setattr)

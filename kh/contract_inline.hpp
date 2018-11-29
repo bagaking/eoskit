@@ -1,6 +1,5 @@
 #pragma once
 
-#include "./helper/system_attr.hpp"
 #include "./utils/assert.hpp"
 
 namespace kh {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "./utils/assert.hpp"
+
 namespace kh {
 
     class contract_base : public eosio::contract {

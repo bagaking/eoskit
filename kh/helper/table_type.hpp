@@ -59,6 +59,15 @@ namespace kh {
             EOSLIB_SERIALIZE(field_all_in_one_t, (key)(vint)(vstr)(vaname)(vasset)
             )
         };
+
+        //@abi table maker i64
+        struct [[eosio::table]] res_t {
+            eosio::asset    balance;
+            uint64_t primary_key() const { return balance.symbol.name(); }
+
+            EOSLIB_SERIALIZE(res_t, (balance)
+            )
+        };
     }
 }
 

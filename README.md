@@ -88,6 +88,20 @@ tables[
       "key_names": [],
       "key_types": []
   },
+  {
+      "name": "res.accounts",
+      "type": "res",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+  },
+  {
+      "name": "res.info",
+      "type": "res",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+  },
   ...
 ]
 ...

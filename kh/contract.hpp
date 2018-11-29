@@ -3,6 +3,7 @@
 #include "./contract_base.hpp"
 #include "./contract_attr.hpp"
 #include "./contract_inline.hpp"
+#include "./contract_res.hpp"
 
 #include "./plugin/plugin.hpp"
 #include "./plugin/context.hpp"
@@ -12,7 +13,7 @@
 
 namespace kh {
 
-    class contract : public contract_base, public contract_attr, public contract_inline {
+    class contract : public contract_base, public contract_attr, public contract_inline, public contract_res {
     public:
         typedef plugin<kh::ctx_transfer, kh::contract> plg_transfer_t;
         typedef plugin<kh::ctx_transcal, kh::contract> plg_transcal_t;
@@ -23,7 +24,8 @@ namespace kh {
                 const account_name code) //if code not equal to self, meas this call is triggered by other contracts.
                 : contract_base(self, code),
                   contract_attr(self),
-                  contract_inline(self) {
+                  contract_inline(self),
+                  contract_res(self) {
         };
 
         /** region for public event */
@@ -64,12 +66,11 @@ namespace kh {
 #define EXPORT_ABI(TYPE, MEMBERS) \
 extern "C" {  \
     void apply(uint64_t receiver, uint64_t code, uint64_t action) { \
+        eosio::print("export :", receiver, ",", code, ",", action," ||| ");\
         eosio_assert(boost::is_base_of<kh::contract, TYPE>::value, "contract must extend the kh::contract"); \
         eosio_assert(action != N(onerror) || code == N(eosio), "onerror action's are only valid from the 'eosio' system account"); \
         auto self = receiver; \
         TYPE thiscontract(self, code); \
-        eosio::print("export :", self, ",", code, " ||| ");\
-        eosio::print("try call action :", action, " ||| ");\
         switch (action) { \
             case N(transfer): \
                 if(code == self) break; /* cannot receive transfer triggered by self */ \
@@ -84,4 +85,4 @@ extern "C" {  \
     } \
 }
 
-#define KH_EXPORT(TYPE, MEMBERS) EXPORT_ABI(TYPE, MEMBERS KH_EXPORT_ATTR)
+#define KH_EXPORT(TYPE, API_NAMES) EXPORT_ABI(TYPE, API_NAMES KH_EXPORT_RES KH_EXPORT_ATTR )

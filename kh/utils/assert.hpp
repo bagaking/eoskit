@@ -25,16 +25,16 @@ namespace kh {
             equal(N(eosio.token), code, "invalid token publisher");
         }
 
-        const void is_valid_token_of_symbol(eosio::asset token, eosio::symbol_type symbol) {
-            is_valid_token(token);
-            equal(token.symbol, symbol, "symbol of the token are not allowed");
-        }
-
         const void is_valid_token(eosio::asset token) {
             auto sym = token.symbol;
             ok(sym.is_valid(), "invalid symbol name");
             ok(token.is_valid(), "Invalid token transfer");
             ok(token.amount > 0, "must bet a positive amount");
+        }
+
+        const void is_valid_token_of_symbol(eosio::asset token, eosio::symbol_type symbol) {
+            is_valid_token(token);
+            equal(token.symbol, symbol, "symbol of the token are not allowed");
         }
 
         const void is_system_account(account_name name) {

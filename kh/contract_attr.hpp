@@ -39,3 +39,5 @@ namespace kh {
     }; // namespace kh
 
 }
+
+#define KH_EXPORT_ATTR() (setattr)

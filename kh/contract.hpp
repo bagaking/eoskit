@@ -2,6 +2,7 @@
 
 #include "./contract_base.hpp"
 #include "./contract_attr.hpp"
+#include "./contract_inline.hpp"
 
 #include "./plugin/plugin.hpp"
 #include "./plugin/context.hpp"
@@ -11,7 +12,7 @@
 
 namespace kh {
 
-    class contract : public contract_base, public contract_attr {
+    class contract : public contract_base, public contract_attr, public contract_inline {
     public:
         typedef plugin<kh::ctx_transfer, kh::contract> plg_transfer_t;
         typedef plugin<kh::ctx_transcal, kh::contract> plg_transcal_t;
@@ -21,7 +22,8 @@ namespace kh {
                 const account_name self,
                 const account_name code) //if code not equal to self, meas this call is triggered by other contracts.
                 : contract_base(self, code),
-                  contract_attr(self) {
+                  contract_attr(self),
+                  contract_inline(self) {
         };
 
         /** region for public event */
@@ -49,29 +51,6 @@ namespace kh {
             }
             ctx_transcal ctx = {.from = from, .to = to, .quantity = quantity, .func = func, .args = args};
             transcal_plugins->trigger(ctx, *this);
-        }
-
-        template<typename T>
-        void _inline_action(const char *act, const T &&value) {
-            eosio::action(
-                    eosio::permission_level{get_self(), N(active)},
-                    get_self(),
-                    eosio::string_to_name(act),
-                    value)
-                    .send();
-        }
-
-        void _transfer_token(
-                const account_name &to,
-                const account_name &token_code,
-                const eosio::asset &token,
-                const std::string &memo) {
-            eosio::action(
-                    eosio::permission_level{get_self(), N(active)},
-                    token_code,
-                    N(transfer),
-                    make_tuple(get_self(), to, token, memo))
-                    .send();
         }
 
     protected: /** fields */
@@ -105,4 +84,4 @@ extern "C" {  \
     } \
 }
 
-#define KH_EXPORT(TYPE, MEMBERS) EXPORT_ABI(TYPE, MEMBERS(setattr))
+#define KH_EXPORT(TYPE, MEMBERS) EXPORT_ABI(TYPE, MEMBERS KH_EXPORT_ATTR())

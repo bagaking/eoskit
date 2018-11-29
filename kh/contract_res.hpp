@@ -199,13 +199,17 @@ namespace kh {
         kh::assert::ok(memo.size() <= 256, "memo has more than 256 bytes");
 
         stat_table_t stats(__self, __self);
-        auto existing = stats.find(from.symbol.name());
+        auto sym_name = from.symbol.name();
+        auto existing = stats.find(sym_name);
         eosio_assert(existing != stats.end(), "token with symbol does not exist, create token before issue");
 
         const auto &st = *existing;
 
         kh::assert::is_valid_token_of_symbol(from, st.balance.symbol);
         kh::assert::is_valid_token_of_symbol(to, st.balance.symbol);
+
+        auto balance = get_balance(user, sym_name);
+        kh::assert::equal(balance, from, "balance error");
 
         if (from > to) {
             auto change = from - to;
@@ -220,7 +224,6 @@ namespace kh {
                 s.balance += change;
             });
         }
-
 
         require_recipient(user);
     }
@@ -240,6 +243,7 @@ namespace kh {
  * cldev push action sco rescreate '[ "10.00000000 C" ]' -p sco@active
  * cldev push action sco resissue '[ "kinghandtest", "100.00000000 CT", "test" ]' -p sco@active
  * cldev push action sco restake '[ "kinghandtest", "eosio", "88.00000000 C", "test"]' -p sco@active
- * cldev push action sco reschange '[ "kinghandtest", "12.00000000 C", "88.00000000 C", "test"]' -p sco@active
+ * cldev push action sco resburn '[ "eosio", "88.00000000 C", "test"]' -p sco@active
+ * cldev push action sco reschange '[ "kinghandtest", "12.00000000 C", "88.00000000 C", "test"]' -p sco@activec
  *
  */

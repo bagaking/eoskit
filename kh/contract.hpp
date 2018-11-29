@@ -1,5 +1,8 @@
 #pragma once
 
+#include "./contract_base.hpp"
+#include "./contract_attr.hpp"
+
 #include "./plugin/plugin.hpp"
 #include "./plugin/context.hpp"
 
@@ -8,7 +11,7 @@
 
 namespace kh {
 
-    class contract : public eosio::contract {
+    class contract : public contract_base, public contract_attr {
     public:
         typedef plugin<kh::ctx_transfer, kh::contract> plg_transfer_t;
         typedef plugin<kh::ctx_transcal, kh::contract> plg_transcal_t;
@@ -17,9 +20,8 @@ namespace kh {
         contract(
                 const account_name self,
                 const account_name code) //if code not equal to self, meas this call is triggered by other contracts.
-                : eosio::contract(self),
-                  _p_sa(nullptr),
-                  _code(code) {
+                : contract_base(self, code),
+                  contract_attr(self) {
         };
 
         /** region for public event */
@@ -49,37 +51,6 @@ namespace kh {
             transcal_plugins->trigger(ctx, *this);
         }
 
-        /** region for export */
-        //    public:
-        [[eosio::action]] void setattr(account_name key, const std::string val) {
-//            eosio::print("setattr", key, ",", val, " ||| ");
-            _set_my(key, val);
-        }
-
-        /** region for utility */
-        //    protected:
-
-        account_name _get_code() {
-            return _code;
-        }
-
-        template<typename T>
-        void _set_my(account_name key, const T val) {
-            require_auth(_code);
-            if (_p_sa == nullptr) {
-                _p_sa = new helper::system_attr(_self);
-            }
-            _p_sa->set(key, val);
-        }
-
-        template<typename T>
-        std::string _get_my(const uint64_t key, const T default_val) {
-            if (_p_sa == nullptr) {
-                _p_sa = new helper::system_attr(_self);
-            }
-            return _p_sa->ensure(key, default_val);
-        }
-
         template<typename T>
         void _inline_action(const char *act, const T &&value) {
             eosio::action(
@@ -104,8 +75,6 @@ namespace kh {
         }
 
     protected: /** fields */
-        account_name _code;
-        helper::system_attr *_p_sa;
         kh::plugin<kh::ctx_transfer, kh::contract> *transfer_plugins;
         kh::plugin<kh::ctx_transcal, kh::contract> *transcal_plugins;
 

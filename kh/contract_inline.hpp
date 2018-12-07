@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./utils/assert.hpp"
+#include "./utils/util.hpp"
 
 namespace kh {
 
@@ -11,25 +12,15 @@ namespace kh {
     public:
         template<typename T>
         void _inline_action(const char *act, const T &&value) {
-            eosio::action(
-                    eosio::permission_level{__self, N(active)},
-                    __self,
-                    eosio::string_to_name(act),
-                    value)
-                    .send();
+            utils::call(__self, __self, act, value);
         }
 
         void _transfer_token(
                 const account_name &to,
-                const account_name &token_code,
+                const account_name &token_code_account,
                 const eosio::asset &token,
                 const std::string &memo) {
-            eosio::action(
-                    eosio::permission_level{__self, N(active)},
-                    token_code,
-                    N(transfer),
-                    make_tuple(__self, to, token, memo))
-                    .send();
+            utils::call(__self, token_code_account, act, make_tuple(__self, to, token, memo));
         }
 
     private:

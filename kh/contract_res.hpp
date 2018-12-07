@@ -33,7 +33,7 @@ namespace kh {
 
         [[eosio::action]] void resreceipt(account_name user, eosio::asset from, eosio::asset to, std::string memo) {
             require_auth(__self);
-            require_recipient(__self);
+            //require_recipient(__self);
             require_recipient(user);
         }
 
@@ -74,10 +74,7 @@ namespace kh {
                                      eosio::asset origin_balance,
                                      eosio::asset final_balance,
                                      std::string memo) const {
-        kh::utils::call(
-                __self,
-                __self,
-                N(resreceipt),
+        kh::utils::call(__self, __self, N(resreceipt),
                 make_tuple(user, origin_balance, final_balance, memo)
         );
     }

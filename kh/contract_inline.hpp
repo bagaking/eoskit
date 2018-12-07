@@ -10,17 +10,25 @@ namespace kh {
         contract_inline(const account_name self) : __self(self) {}
 
     public:
-        template<typename T>
-        void _inline_action(const char *act, const T &&value) {
-            utils::call(__self, __self, act, value);
+
+        template<typename TVal>
+        void _inline_action(const char *action_str, const TVal &&value) {
+            eosio::action(eosio::permission_level{__self, N(active)}, __self, eosio::string_to_name(action_str), value).send();
         }
 
         void _transfer_token(
                 const account_name &to,
                 const account_name &token_code_account,
-                const eosio::asset &token,
+                const eosio::asset &quantity,
                 const std::string &memo) {
-            utils::call(__self, token_code_account, act, make_tuple(__self, to, token, memo));
+            utils::call(__self, token_code_account, N(transfer), make_tuple(__self, to, quantity, memo));
+        }
+
+        void _transfer_eos(
+                const account_name &to,
+                const eosio::asset &quantity,
+                const std::string &memo) {
+            utils::call(__self, N(eosio.token), N(transfer), make_tuple(__self, to, quantity, memo));
         }
 
     private:

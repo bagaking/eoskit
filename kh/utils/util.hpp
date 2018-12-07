@@ -9,7 +9,7 @@ namespace kh {
         }
 
         template<typename TVal>
-        void call(const account_name from, const account_name target, const char *act, const TVal &&value) {
+        void call_with_namestr(const account_name from, const account_name target, const char *act, const TVal &&value) {
             call(from, target, eosio::string_to_name(act), value);
         }
     }

@@ -31,7 +31,7 @@ namespace kh {
                                          eosio::asset to,
                                          std::string memo);
 
-        [[eosio::action]] void resreceipt(account_name user, eosio::asset from, eosio::asset to, std::string memo){
+        [[eosio::action]] void resreceipt(account_name user, eosio::asset from, eosio::asset to, std::string memo) {
             require_auth(__self);
             require_recipient(__self);
             require_recipient(user);
@@ -53,19 +53,34 @@ namespace kh {
 
         account_name __self;
 
-        inline eosio::asset _send_receipt(account_name user, eosio::asset origin_balance, eosio::asset final_balance, std::string memo) const {
-            kh::utils::call(__self, __self, N(resreceipt), make_tuple(user, origin_balance, final_balance, memo));
-        }
+        inline void _send_receipt(account_name user,
+                                  eosio::asset origin_balance,
+                                  eosio::asset final_balance,
+                                  std::string memo) const;
 
     private:
 
         typedef eosio::multi_index<N(res.accounts), helper::res_t> account_table_t;
         typedef eosio::multi_index<N(res.info), helper::res_t> stat_table_t;
 
-        void res_sub_balance(account_name user, eosio::asset value);
+        std::tuple <eosio::asset, eosio::asset>
+        res_sub_balance(account_name user, eosio::asset value, std::string memo);
 
-        void res_add_balance(account_name user, eosio::asset value);
+        std::tuple <eosio::asset, eosio::asset>
+        res_add_balance(account_name user, eosio::asset value, std::string memo);
     }; // namespace kh
+
+    void contract_res::_send_receipt(account_name user,
+                                     eosio::asset origin_balance,
+                                     eosio::asset final_balance,
+                                     std::string memo) const {
+        kh::utils::call(
+                __self,
+                __self,
+                N(resreceipt),
+                make_tuple(user, origin_balance, final_balance, memo)
+        );
+    }
 
     eosio::asset contract_res::get_supply(eosio::symbol_name sym) const {
         stat_table_t stats(__self, __self);
@@ -79,13 +94,14 @@ namespace kh {
         return ac.balance;
     }
 
-    std::tuple<eosio::asset, eosio::asset> contract_res::res_sub_balance(account_name user, eosio::asset value) {
+    std::tuple <eosio::asset, eosio::asset>
+    contract_res::res_sub_balance(account_name user, eosio::asset value, std::string memo) {
         account_table_t accounts(__self, user);
 
         const auto &from = accounts.get(value.symbol.name(), "no balance object found");
         kh::assert::ok(from.balance.amount >= value.amount, "overdrawn balance");
 
-        eosio::asset origin_balance = from.balance.amount;
+        eosio::asset origin_balance = from.balance;
         eosio::asset final_balance;
         if (from.balance.amount == value.amount) {
             accounts.erase(from);
@@ -102,13 +118,14 @@ namespace kh {
         return std::make_tuple(origin_balance, final_balance);
     }
 
-    std::tuple<eosio::asset, eosio::asset> contract_res::res_add_balance(account_name user, eosio::asset value) {
+    std::tuple <eosio::asset, eosio::asset>
+    contract_res::res_add_balance(account_name user, eosio::asset value, std::string memo) {
         account_table_t accounts(__self, user);
 
         const auto &key = value.symbol.name();
         auto to = accounts.find(key);
 
-        eosio::asset origin_balance = to->balance.amount;
+        eosio::asset origin_balance = to->balance;
         eosio::asset final_balance;
 
         if (to == accounts.end()) {
@@ -141,7 +158,7 @@ namespace kh {
             s.balance = supply;
         });
 
-        res_add_balance(__self, supply);
+        res_add_balance(__self, supply, std::string("initial resources"));
     }
 
     void contract_res::resissue(account_name user, eosio::asset quantity, std::string memo) {
@@ -164,7 +181,7 @@ namespace kh {
             s.balance += quantity;
         });
 
-        res_add_balance(user, quantity);
+        res_add_balance(user, quantity, memo);
     }
 
     void contract_res::resburn(account_name user, eosio::asset quantity, std::string memo) {
@@ -187,7 +204,7 @@ namespace kh {
             s.balance -= quantity;
         });
 
-        res_sub_balance(user, quantity);
+        res_sub_balance(user, quantity, memo);
     }
 
     void contract_res::restake(account_name from,
@@ -210,8 +227,8 @@ namespace kh {
         require_recipient(from);
         require_recipient(to);
 
-        res_sub_balance(from, quantity);
-        res_add_balance(to, quantity);
+        res_sub_balance(from, quantity, memo);
+        res_add_balance(to, quantity, memo);
     }
 
     void contract_res::reschange(account_name user,
@@ -240,13 +257,13 @@ namespace kh {
 
         if (from > to) {
             auto change = from - to;
-            res_sub_balance(user, change);
+            res_sub_balance(user, change, memo);
             stats.modify(st, 0, [&](auto &s) {
                 s.balance -= (change);
             });
         } else {
             auto change = to - from;
-            res_add_balance(user, change);
+            res_add_balance(user, change, memo);
             stats.modify(st, 0, [&](auto &s) {
                 s.balance += change;
             });

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "./utils/assert.hpp"
+#include "./utils/util.hpp"
+
 #include "./helper/table_type.hpp"
 
 namespace kh {
@@ -29,6 +31,11 @@ namespace kh {
                                          eosio::asset to,
                                          std::string memo);
 
+        [[eosio::action]] void resreceipt(account_name user, eosio::asset from, eosio::asset to, std::string memo){
+            require_auth(__self);
+            require_recipient(__self);
+            require_recipient(user);
+        }
 
         inline eosio::asset get_supply(eosio::symbol_name sym) const;
 
@@ -45,6 +52,10 @@ namespace kh {
     private:
 
         account_name __self;
+
+        inline eosio::asset _send_receipt(account_name user, eosio::asset origin_balance, eosio::asset final_balance, std::string memo) const {
+            kh::utils::call(__self, __self, N(resreceipt), make_tuple(user, origin_balance, final_balance, memo));
+        }
 
     private:
 
@@ -68,35 +79,52 @@ namespace kh {
         return ac.balance;
     }
 
-    void contract_res::res_sub_balance(account_name user, eosio::asset value) {
+    std::tuple<eosio::asset, eosio::asset> contract_res::res_sub_balance(account_name user, eosio::asset value) {
         account_table_t accounts(__self, user);
 
         const auto &from = accounts.get(value.symbol.name(), "no balance object found");
         kh::assert::ok(from.balance.amount >= value.amount, "overdrawn balance");
 
+        eosio::asset origin_balance = from.balance.amount;
+        eosio::asset final_balance;
         if (from.balance.amount == value.amount) {
             accounts.erase(from);
+            final_balance.symbol = value.symbol;
+            final_balance.amount = 0;
         } else {
             accounts.modify(from, __self, [&](auto &a) {
                 a.balance -= value;
+                final_balance = a.balance;
             });
         }
+
+        _send_receipt(user, origin_balance, final_balance, memo);
+        return std::make_tuple(origin_balance, final_balance);
     }
 
-    void contract_res::res_add_balance(account_name user, eosio::asset value) {
+    std::tuple<eosio::asset, eosio::asset> contract_res::res_add_balance(account_name user, eosio::asset value) {
         account_table_t accounts(__self, user);
 
         const auto &key = value.symbol.name();
         auto to = accounts.find(key);
+
+        eosio::asset origin_balance = to->balance.amount;
+        eosio::asset final_balance;
+
         if (to == accounts.end()) {
             accounts.emplace(__self, [&](auto &a) {
                 a.balance = value;
+                final_balance = a.balance;
             });
         } else {
             accounts.modify(to, 0, [&](auto &a) {
                 a.balance += value;
+                final_balance = a.balance;
             });
         }
+
+        _send_receipt(user, origin_balance, final_balance, memo);
+        return std::make_tuple(origin_balance, final_balance);
     }
 
     void contract_res::rescreate(eosio::asset supply) {
@@ -155,13 +183,11 @@ namespace kh {
 
         kh::assert::is_valid_token_of_symbol(quantity, st.balance.symbol);
 
-        res_sub_balance(user, quantity);
-
         stats.modify(st, 0, [&](auto &s) {
             s.balance -= quantity;
         });
 
-        require_recipient(user);
+        res_sub_balance(user, quantity);
     }
 
     void contract_res::restake(account_name from,
@@ -181,11 +207,11 @@ namespace kh {
 
         kh::assert::is_valid_token_of_symbol(quantity, st.balance.symbol);
 
-        res_sub_balance(from, quantity);
-        res_add_balance(to, quantity);
-
         require_recipient(from);
         require_recipient(to);
+
+        res_sub_balance(from, quantity);
+        res_add_balance(to, quantity);
     }
 
     void contract_res::reschange(account_name user,
@@ -193,6 +219,7 @@ namespace kh {
                                  eosio::asset to,
                                  std::string memo) {
         require_auth(__self);
+
         kh::assert::ok(is_account(user), "user does not exist");
         kh::assert::not_equal(from, to, "no changes");
         kh::assert::equal(from.symbol, to.symbol, "from and to must have the same symbol");
@@ -225,12 +252,10 @@ namespace kh {
             });
         }
 
-        require_recipient(user);
     }
-
 }
 
-#define KH_EXPORT_RES (rescreate)(resissue)(resburn)(restake)(reschange)
+#define KH_EXPORT_RES (rescreate)(resissue)(resburn)(restake)(reschange)(resreceipt)
 
 /*
  * example

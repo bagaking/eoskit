@@ -121,17 +121,20 @@ namespace kh {
         const auto &key = value.symbol.name();
         auto to = accounts.find(key);
 
-        eosio::asset origin_balance = to->balance;
-        eosio::asset final_balance;
+        eosio::asset origin_balance;
+        eosio::asset final_balance = value;
 
         if (to == accounts.end()) {
             accounts.emplace(__self, [&](auto &a) {
                 a.balance = value;
+                origin_balance.symbol = value.symbol;
+                origin_balance.amount = 0;
                 final_balance = a.balance;
             });
         } else {
             accounts.modify(to, 0, [&](auto &a) {
                 a.balance += value;
+                origin_balance = to->balance;
                 final_balance = a.balance;
             });
         }

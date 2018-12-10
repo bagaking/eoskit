@@ -251,7 +251,7 @@ namespace kh {
         kh::assert::is_valid_token_of_symbol(from, st.balance.symbol);
         kh::assert::is_valid_token_of_symbol(to, st.balance.symbol);
 
-        auto balance = get_balance(user, sym_name);
+        auto balance = _get_res_balance(user, sym_name);
         kh::assert::equal(balance, from, "balance error");
 
         if (from > to) {

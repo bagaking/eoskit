@@ -77,7 +77,7 @@ namespace kh {
 
             uint64_t primary_key() const { return cid; }
 
-            EOSLIB_SERIALIZE(res_t, (cid)(count)
+            EOSLIB_SERIALIZE(item_t, (cid)(count)
             )
         };
     }

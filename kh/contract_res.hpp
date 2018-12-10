@@ -37,9 +37,8 @@ namespace kh {
             require_recipient(user);
         }
 
-        inline eosio::asset get_supply(eosio::symbol_name sym) const;
-
-        inline eosio::asset get_balance(account_name user, eosio::symbol_name sym) const;
+        inline eosio::asset _get_res_supply(eosio::symbol_name sym) const;
+        inline eosio::asset _get_res_balance(account_name user, eosio::symbol_name sym) const;
 
     public:
         struct transfer_args {
@@ -79,13 +78,13 @@ namespace kh {
         );
     }
 
-    eosio::asset contract_res::get_supply(eosio::symbol_name sym) const {
+    eosio::asset contract_res::_get_res_supply(eosio::symbol_name sym) const {
         stat_table_t stats(__self, __self);
         const auto &st = stats.get(sym);
         return st.balance;
     }
 
-    eosio::asset contract_res::get_balance(account_name user, eosio::symbol_name sym) const {
+    eosio::asset contract_res::_get_res_balance(account_name user, eosio::symbol_name sym) const {
         account_table_t accounts(__self, user);
         const auto &ac = accounts.get(sym);
         return ac.balance;

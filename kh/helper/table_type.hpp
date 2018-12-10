@@ -62,10 +62,22 @@ namespace kh {
 
         //@abi table maker i64
         struct [[eosio::table]] res_t {
-            eosio::asset    balance;
+            eosio::asset balance;
+
             uint64_t primary_key() const { return balance.symbol.name(); }
 
             EOSLIB_SERIALIZE(res_t, (balance)
+            )
+        };
+
+        //@abi table maker i64
+        struct [[eosio::table]] item_t {
+            uint64_t cid; //id with catalog standard <catalog:2, catalog_id:6> .e.p 11000001
+            uint64_t count;
+
+            uint64_t primary_key() const { return cid; }
+
+            EOSLIB_SERIALIZE(res_t, (cid)(count)
             )
         };
     }

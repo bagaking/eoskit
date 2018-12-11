@@ -4,6 +4,7 @@
 #include "./contract_attr.hpp"
 #include "./contract_inline.hpp"
 #include "./contract_res.hpp"
+#include "./contract_item.hpp"
 
 #include "./plugin/plugin.hpp"
 #include "./plugin/context.hpp"
@@ -13,7 +14,12 @@
 
 namespace kh {
 
-    class contract : public contract_base, public contract_attr, public contract_inline, public contract_res {
+    class contract
+            : public contract_base,
+              public contract_attr,
+              public contract_inline,
+              public contract_res,
+              public contract_item {
     public:
         typedef plugin<kh::ctx_transfer, kh::contract> plg_transfer_t;
         typedef plugin<kh::ctx_transcal, kh::contract> plg_transcal_t;
@@ -25,7 +31,8 @@ namespace kh {
                 : contract_base(self, code),
                   contract_attr(self),
                   contract_inline(self),
-                  contract_res(self) {
+                  contract_res(self),
+                  contract_item(self) {
         };
 
         /** region for public event */
@@ -85,4 +92,4 @@ extern "C" {  \
     } \
 }
 
-#define KH_EXPORT(TYPE, API_NAMES) EXPORT_ABI(TYPE, API_NAMES KH_EXPORT_RES KH_EXPORT_ATTR )
+#define KH_EXPORT(TYPE, API_NAMES) EXPORT_ABI(TYPE, API_NAMES KH_EXPORT_ATTR KH_EXPORT_RES KH_EXPORT_ITEM)

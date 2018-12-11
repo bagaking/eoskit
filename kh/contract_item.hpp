@@ -7,17 +7,24 @@
 
 namespace kh {
 
-    class contract_item {
+    class contract_itm {
     public:
-        contract_item(const account_name self) : __self(self) {}
+        contract_itm(const account_name self) : __self(self) {}
 
         [[eosio::action]] void itemissue(account_name user,
-                                         eosio::asset quantity,
+                                         uint64_t cid,
+                                         uint64_t count,
                                          std::string memo);
 
         [[eosio::action]] void itemburn(account_name user,
-                                        eosio::asset quantity,
+                                        uint64_t cid,
+                                        uint64_t count,
                                         std::string memo);
+
+        [[eosio::action]] void itemreset(account_name user,
+                                         uint64_t cid,
+                                         std::string memo);
+
 
         [[eosio::action]] void itemconv(account_name from,      // owner of src
                                         uint64_t src_cid,       // cid of src item
@@ -45,20 +52,20 @@ namespace kh {
 
     private:
 
-        typedef eosio::multi_index<N(res.items), helper::item_t> item_table_t;
+        typedef eosio::multi_index<N(itm.accounts), helper::item_t> item_table_t;
 
         void _item_sub(account_name user, uint64_t cid, uint64_t delta, std::string memo);
 
         void _item_add(account_name user, uint64_t cid, uint64_t delta, std::string memo);
     }; // namespace kh
 
-    uint64_t contract_item::_get_item_count(account_name user, uint64_t cid) const {
+    uint64_t contract_itm::_get_item_count(account_name user, uint64_t cid) const {
         item_table_t items(__self, user);
         const auto &item = items.get(cid);
         return item.count;
     }
 
-    void contract_item::_send_receipt(account_name user,
+    void contract_itm::_send_receipt(account_name user,
                                       uint64_t cid,
                                       uint64_t origin_count,
                                       uint64_t final_count,
@@ -66,7 +73,7 @@ namespace kh {
         kh::utils::call(__self, __self, N(itemreceipt), make_tuple(user, cid, origin_count, final_count, memo));
     }
 
-    void contract_item::_item_sub(account_name user, uint64_t cid, uint64_t delta, std::string memo) {
+    void contract_itm::_item_sub(account_name user, uint64_t cid, uint64_t delta, std::string memo) {
         item_table_t items(__self, user);
         const auto &item = items.get(cid, "item not found");
         kh::assert::ok(item.count >= delta, "no enough item");
@@ -83,7 +90,7 @@ namespace kh {
         _send_receipt(user, cid, origin_count, final_count, memo);
     }
 
-    void contract_item::_item_add(account_name user, uint64_t cid, uint64_t delta, std::string memo) {
+    void contract_itm::_item_add(account_name user, uint64_t cid, uint64_t delta, std::string memo) {
         item_table_t items(__self, user);
         auto p_item = items.find(cid);
 
@@ -101,39 +108,39 @@ namespace kh {
         _send_receipt(user, cid, origin_count, final_count, memo);
     }
 
-    void contract_item::itemconv(account_name from,        // owner of src
+    void contract_itm::itemconv(account_name from,        // owner of src
                                  uint64_t src_cid,         // cid of src item
                                  uint64_t src_count,       // cid of src item
                                  account_name to,          // owner of src
                                  uint64_t dst_cid,         // cid of des item
                                  uint64_t dst_count,
                                  std::string memo) {
-
         // todo: implement this
     }
 
-    void contract_item::itemissue(account_name user,
-                                  eosio::asset quantity,
+    void contract_itm::itemissue(account_name user,
+                                  uint64_t cid,
+                                  uint64_t count,
                                   std::string memo) {
         // todo: implement this
     }
 
-    void contract_item::itemburn(account_name user,
-                                 eosio::asset quantity,
+    void contract_itm::itemburn(account_name user,
+                                 uint64_t cid,
+                                 uint64_t count,
                                  std::string memo) {
         // todo: implement this
     }
 
-    void contract_item::itemtransfer(account_name from,
-                                     account_name to,
-                                     eosio::asset quantity,
-                                     std::string memo) {
+    void contract_itm::itemreset(account_name user,
+                                  uint64_t cid,
+                                  std::string memo) {
         // todo: implement this
     }
 
 }
 
-#define KH_EXPORT_ITEM (itemconv)(itemreceipt)
+#define KH_EXPORT_ITM (itemreceipt)(itemissue)(itemburn)(itemreset)(itemconv)
 
 /*
  * example

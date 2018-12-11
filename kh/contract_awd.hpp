@@ -22,12 +22,12 @@ namespace kh {
     public:
         contract_awd(const account_name self) : __self(self) {}
 
-        [[eosio::action]] void awdreceipt(account_name user, uint64_t award_id, eosio::asset award) {
+        [[eosio::action]] void awdreceipt(account_name user, uint64_t award_id, eosio::asset award, std::string memo) {
             require_auth(__self);
             require_recipient(user);
         }
 
-        inline eosio::asset _get_awards_left(uint64_t eosio::symbol_name sym) const;
+        inline eosio::asset _get_awards_left(uint64_t award_id) const;
 
     private:
         account_name __self;
@@ -53,10 +53,10 @@ namespace kh {
         void _awd_take(account_name user, uint64_t award_id, eosio::asset award);
     }; // namespace kh
 
-    eosio::asset contract_awd::_get_awards_left(uint64_t eosio, ::symbol_name sym) const {
+    eosio::asset contract_awd::_get_awards_left(uint64_t award_id) const {
         awd_table_t awards(__self, __self);
-        const auto &ac = awards(sym);
-        return ac.balance;
+        const auto &ac = awards(award_id);
+        return ac.left;
     }
 
     void contract_awd::_awd_append(uint64_t award_id, eosio::asset award) {
@@ -72,7 +72,7 @@ namespace kh {
         });
     }
 
-    void contract_awd::_awd_take(account_name user, uint64_t award_id, eosio::asset award) {
+    void contract_awd::_awd_take(account_name user, uint64_t award_id, eosio::asset award, std::string memo) {
         kh::assert::is_valid_token(award);
         awd_table_t awards(__self, __self);
 
@@ -89,6 +89,14 @@ namespace kh {
                 a.left -= award;
             });
         }
+
+        // send receipt to seller, buyer
+        kh::utils::call(__self, __self, N(awdreceipt),
+                        make_tuple(user, award_id, award, memo)
+        );
     }
 
 }
+
+
+#define KH_EXPORT_AWD (itemreceipt)

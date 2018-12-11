@@ -31,10 +31,9 @@ namespace kh {
 
     private:
         account_name __self;
+        typedef eosio::multi_index<N(awd.info), award_t> awd_table_t;
 
-    private:
-        typedef eosio::multi_index<N(awd.info), helper::res_t> awd_table_t;
-
+    protected:
         /**
          * append awards
          * @attention award's symbol, which are defined by the first award, will be verified
@@ -50,12 +49,12 @@ namespace kh {
          * @param award_id
          * @param award - quantity
          */
-        void _awd_take(account_name user, uint64_t award_id, eosio::asset award);
+        void _awd_take(account_name user, uint64_t award_id, eosio::asset award, std::string memo);
     }; // namespace kh
 
     eosio::asset contract_awd::_get_awards_left(uint64_t award_id) const {
         awd_table_t awards(__self, __self);
-        const auto &ac = awards(award_id);
+        const auto &ac = awards.get(award_id);
         return ac.left;
     }
 
@@ -65,38 +64,41 @@ namespace kh {
         awd_table_t awards(__self, __self);
         auto p_entry = awards.find(award_id);
 
-        if (p_entry == awards.end()) awards.emplace(__self, [&](auto &a) { a.left = award; });
-        else {
-            kh::assert::is_valid_token_of_symbol(award, awards.symbol, "error symbol detected when append awards. ")
-            awards.modify(entry, 0, [&](auto &a) { a.left += award; }
-        });
+        if (p_entry == awards.end()) {
+            awards.emplace(__self, [&](auto &a) {
+                a.key = award_id;
+                a.left = award;
+            });
+        } else {
+            kh::assert::is_valid_token_of_symbol(award, p_entry->left.symbol);
+            awards.modify(p_entry, 0, [&](auto &a) { a.left += award; });
+        };
     }
 
-    void contract_awd::_awd_take(account_name user, uint64_t award_id, eosio::asset award, std::string memo) {
-        kh::assert::is_valid_token(award);
+    void contract_awd::_awd_take(account_name user, uint64_t award_id, eosio::asset quantity, std::string memo) {
+        kh::assert::is_valid_token(quantity);
         awd_table_t awards(__self, __self);
 
-        auto entry = awards.find(award_id);
         const auto &entry = awards.get(award_id, "no balance object found. ");
 
-        kh::assert::is_valid_token_of_symbol(award, entry.left.symbol, "error symbol detected when append awards. ")
-        kh::assert::ok(entry.left.amount >= award.amount, "overdrawn balance. ");
+        kh::assert::is_valid_token_of_symbol(quantity, entry.left.symbol);
+        kh::assert::ok(entry.left.amount >= quantity.amount, "overdrawn balance. ");
 
-        if (entry.left.amount == awards.amount) {
+        if (entry.left.amount == quantity.amount) {
             awards.erase(entry);
         } else {
-            awards.modify(from, 0, [&](auto &a) {
-                a.left -= award;
+            awards.modify(entry, 0, [&](auto &a) {
+                a.left -= quantity;
             });
         }
 
         // send receipt to seller, buyer
         kh::utils::call(__self, __self, N(awdreceipt),
-                        make_tuple(user, award_id, award, memo)
+                        make_tuple(user, award_id, quantity, memo)
         );
     }
 
 }
 
 
-#define KH_EXPORT_AWD (itemreceipt)
+#define KH_EXPORT_AWD (awdreceipt)

@@ -14,7 +14,7 @@ namespace kh {
 
         uint64_t primary_key() const { return key; }
 
-        EOSLIB_SERIALIZE(res_t, (balance)
+        EOSLIB_SERIALIZE(award_t, (key)(left)
         )
     };
 

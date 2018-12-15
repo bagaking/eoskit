@@ -20,8 +20,9 @@ namespace kh {
               public contract_attr,
               public contract_inline,
               public contract_res,
-              public contract_item,
+              public contract_itm,
               public contract_awd {
+
     public:
         typedef plugin<kh::ctx_transfer, kh::contract> plg_transfer_t;
         typedef plugin<kh::ctx_transcal, kh::contract> plg_transcal_t;
@@ -34,7 +35,7 @@ namespace kh {
                   contract_attr(self),
                   contract_inline(self),
                   contract_res(self),
-                  contract_item(self),
+                  contract_itm(self),
                   contract_awd(self) {
         };
 

@@ -34,7 +34,7 @@ namespace kh {
                                         uint64_t dst_count,
                                         std::string memo);     // cid of des item
 
-        [[eosio::action]] void itemreceipt(account_name user, eosio::asset from, eosio::asset to, std::string memo) {
+        [[eosio::action]] void itemreceipt(account_name user, uint64_t cid, uint64_t origin_count, uint64_t final_count, std::string memo) {
             require_auth(__self);
             require_recipient(user);
         }
@@ -98,7 +98,7 @@ namespace kh {
         uint64_t final_count = delta;
 
         if (p_item == items.end()) {
-            items.emplace(__self, [&](auto &a) { a.count = delta; });
+            items.emplace(__self, [&](auto &a) { a.count = delta; a.cid = cid;});
         } else {
             items.modify(p_item, 0, [&](auto &a) {
                 origin_count = a.count;
@@ -115,27 +115,44 @@ namespace kh {
                                  uint64_t dst_cid,         // cid of des item
                                  uint64_t dst_count,
                                  std::string memo) {
-        // todo: implement this
+        require_auth(__self);
+        kh::assert::ok(is_account(from), "from account does not exist");
+        kh::assert::ok(is_account(to), "to account does not exist");
+
+        require_recipient(from);
+        require_recipient(to);
+
+        _item_sub(from,src_cid,src_count,memo);
+        _item_add(to,dst_cid,dst_count,memo);
     }
 
     void contract_itm::itemissue(account_name user,
                                   uint64_t cid,
                                   uint64_t count,
                                   std::string memo) {
-        // todo: implement this
+        require_auth(__self);
+        kh::assert::ok(memo.size() <= 256,"memo has more than 256 bytes");
+
+        _item_add(user,cid,count,memo);
     }
 
     void contract_itm::itemburn(account_name user,
                                  uint64_t cid,
                                  uint64_t count,
                                  std::string memo) {
-        // todo: implement this
+        require_auth(__self);
+        kh::assert::ok(memo.size() <= 256,"memo has more than 256 bytes");
+
+        _item_sub(user,cid,count,memo);
     }
 
     void contract_itm::itemreset(account_name user,
                                   uint64_t cid,
                                   std::string memo) {
-        // todo: implement this
+        require_auth(__self);
+        kh::assert::ok(memo.size() <= 256,"memo has more than 256 bytes");
+        uint64_t count = _get_item_count(user,cid);
+        _item_sub(user,cid,count,memo);
     }
 
 }
@@ -145,6 +162,11 @@ namespace kh {
 /*
  * example
  *
- * todo: fill this
+ *  cleos get table sco bob itm.accounts
+ *
+ *  cleos push action sco itemissue '["bob","1","50","memo"]' -p sco@active
+ *  cleos push action sco itemburn '["bob","2","10","memo"]' -p sco@active
+ *  cleos push action sco itemreset '["bob","2","memo"]' -p sco@active
+ *  cleos push action sco itemconv '["bob","2","30","bob","3","40","memo"]' -p sco@active
  *
  */

@@ -22,7 +22,7 @@ namespace kh {
         }
 
         const void code_must_be_eosio_token(account_name code) {
-            equal(N(eosio.token), code, "invalid token publisher");
+            equal(N(eosio.token), code, "invalid token publisher " + (eosio::name{code}).to_string());
         }
 
         const void is_valid_token(eosio::asset token) {

@@ -9,6 +9,7 @@ namespace kh {
 
         void on_trigger(const ctx_transfer &ctx, kh::contract &contract_) override {
             eosio::print("plg_transfer_validate_eos_token");
+
             kh::assert::code_must_be_eosio_token(contract_._get_code());
             kh::assert::is_valid_token_of_symbol(ctx.quantity, S(4, EOS));
             /** go ahead */
@@ -21,6 +22,12 @@ namespace kh {
     public:
 
         void on_trigger(const ctx_transfer &ctx, kh::contract &contract_) override {
+            if(contract_._get_code() == N(eosio.token)) return next(ctx, contract_); // code must be eosio.token
+            if(ctx.from == contract_._get_self()) return next(ctx, contract_); // if it is a receipt send by _self, jump over
+            if(ctx.to != contract_._get_self()) return next(ctx, contract_); // if the receiver is not _self, jump over
+
+            kh::assert::is_valid_token_of_symbol(ctx.quantity, S(4, EOS)); // must be EOS token
+
             eosio::print("plg_transfer_send_transcal");
             auto code = contract_._get_code();
             auto from = ctx.from;
@@ -58,5 +65,6 @@ namespace kh {
         };
 
     };
+
 
 }

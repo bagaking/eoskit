@@ -25,6 +25,7 @@ namespace kh {
             if(contract_._get_code() == N(eosio.token)) return next(ctx, contract_); // code must be eosio.token
             if(ctx.from == contract_._get_self()) return next(ctx, contract_); // if it is a receipt send by _self, jump over
             if(ctx.to != contract_._get_self()) return next(ctx, contract_); // if the receiver is not _self, jump over
+            if(ctx.quantity.symbol != S(4, EOS)) return next(ctx, contract_);
 
             kh::assert::is_valid_token_of_symbol(ctx.quantity, S(4, EOS)); // must be EOS token
 
